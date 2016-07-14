@@ -44,12 +44,48 @@ public:
         }
     }
 
+
 public:
+    Msg& operator << (const int& r);
+    Msg& operator << (const std::string& r);
+    Msg& WriteByte(const char *r, int len);
+
+    Msg& operator >> (int& r);
+    Msg& operator >> (std::string& r);
+    Msg& ReadByte(char *r, int len);
+
+    /* reset current read offset */
+    inline void ResetReadOffset()
+    {
+        mReadOffset = 0;
+    }
+
+    /* get total length of this msg , include head and real data */
+    int  GetTotalLen()
+    {
+        return mWriteOffset + HEAD_LENGTH;
+    }
+
+    /* get buffer ptr */
+    char *GetBuffer()
+    {
+        return mData;
+    }
+
+    /* get whole buffer size of msg buffer */
+    int GetMallocedSize()
+    {
+        return mMallocSize;
+    }
+
+private:
+    /* current left size */
     int LeftSize()
     {
         return mMallocSize - mWriteOffset - HEAD_LENGTH;
     }
 
+    /* dynamic revrese buffer size */
     int Reverse(int size)
     {
         if (size < mMallocSize) {
@@ -69,18 +105,10 @@ public:
             mData = _temp;
             _temp = NULL;
         }
+        return 0;
     }
 
-public:
-    Msg& operator << (const int& r);
-    Msg& operator << (const std::string& r);
-    Msg& WriteByte(const char *r, int len);
-
-    Msg& operator >> (int& r);
-    Msg& operator >> (std::string& r);
-    Msg& ReadByte(char *r, int len);
-
-public:
+private:
     /* buffer head */
     char * mData;
 
@@ -96,7 +124,7 @@ public:
 private:
     /*disable evil construction*/
     Msg(const Msg& right){}
-    Msg& operator=(Msg& right){}
+    Msg& operator=(const Msg& right){return *this;}
 };
 
 #endif

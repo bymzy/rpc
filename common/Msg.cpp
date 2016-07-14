@@ -48,6 +48,7 @@ Msg& Msg::operator >> (std::string& r)
     this->operator>>(len);
     r.assign(mData + HEAD_LENGTH + mReadOffset, len);
     mReadOffset += len;
+    return *this;
 }
 
 Msg& Msg::ReadByte(char *r, int len)
@@ -56,6 +57,7 @@ Msg& Msg::ReadByte(char *r, int len)
     mReadOffset += len;
     return *this;
 }
+
 
 
 
