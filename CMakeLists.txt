@@ -6,7 +6,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
 set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g -ggdb")
 
-include_directories(common/)
+include_directories(common/include)
 link_directories(${PROJECT_BINARY_DIR}/lib)
 
 add_subdirectory(server)
