@@ -56,7 +56,7 @@ int main()
         debug_log("datalen: " << dataLen);
         char *data = (char*)malloc(dataLen);
 
-        err = clientSocket.Recv(data, dataLen);
+        err = clientSocket.RecvAll(data, dataLen);
 
         std::string s;
         s.assign(data, dataLen);

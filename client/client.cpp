@@ -31,8 +31,8 @@ int main()
         int len = htonl(data.length());
         memcpy(buf, &len, sizeof(int));
 
-        client.Send(buf, 4);
-        client.Send(data.c_str(), data.length());
+        client.SendAll(buf, 4);
+        client.SendAll(data.c_str(), data.length());
 
         client.Close();
 

@@ -24,7 +24,7 @@
 class TcpSocket
 {
 public:
-    TcpSocket():mPreRecv(false), mSocket(-1)
+    TcpSocket():mPreRecv(false), mSocket(-1), mClosed(true), mError(0)
     {
     }
     ~TcpSocket()
@@ -57,7 +57,12 @@ public:
                 error_log("getsockopt failed, errno: " << errno
                         << ", errstr: " << strerror(errno));
             }
+
         } while(0);
+
+        if (0 == err) {
+            mClosed = false;
+        }
             
         return err;
     }
@@ -117,6 +122,7 @@ public:
                 }
             }
 
+            mClosed = false;
             mIP = ip;
             mPort = port;
         } while(0);
@@ -245,12 +251,42 @@ public:
         return mSocket;
     }
 
-    int Send(const char *buf, int len)
+    bool NoOK()
+    {
+        return (mClosed || mError != 0);
+    }
+
+    int Send(const char *buf, int len, int &sent)
+    {
+        int err = 0;
+        if (NoOK()) {
+            return EINVAL;
+        }
+
+        sent = send(mSocket, buf, len, 0);
+        if (sent < 0) {
+            err = errno;
+            if (err == EAGAIN ||
+                    err == EWOULDBLOCK) {
+                error_log("send buffer failed, errno: " << errno
+                        << ", errstr: " << strerror(errno));
+                mError = err;
+            }
+        }
+        
+        return err;
+    }
+
+    int SendAll(const char *buf, int len)
     {
         int tosend = len;
         int sent = 0;
         int ret = 0;
         int err = 0;
+
+        if (NoOK()) {
+            return EINVAL;
+        }
 
         while(1)
         {
@@ -260,9 +296,10 @@ public:
             } while(ret<0&&(( EAGAIN == errno ) || ( EWOULDBLOCK == errno )));
 
             if ( ret < 0 ) {
+                err = errno;
+                mError = err;
                 error_log("send buffer failed, errno: " << errno
                         << ", errstr: " << strerror(errno));
-                assert(0);
                 break;
             }
 
@@ -278,11 +315,16 @@ public:
         return err;
     }
 
+    /* pre recv the lenth to recv */
     int PreRecv(int& len)
     {
         int err = 0;
         int tempLen = 0;
         char *buf = (char *)malloc(sizeof(char) * sizeof(int));
+
+        if (NoOK()) {
+            return EINVAL;
+        }
 
         do {
             if (mPreRecv) {
@@ -290,7 +332,7 @@ public:
             }
             mPreRecv = true;
 
-            err = Recv(buf, sizeof(int));
+            err = RecvAll(buf, sizeof(int));
             if (0 != err) {
                 break;
             }
@@ -306,14 +348,46 @@ public:
         return err;
     }
 
+    /* try recv len bytes */
+    int Recv(char *buf, int len, int& received)
+    {
+        int err = 0;
+        if (NoOK()) {
+            return EINVAL;
+        }
 
-    /*recv len bytes unless error occurs*/
-    int Recv(char *buf, int len)
+        do {
+            received = recv(mSocket, buf, len, 0);
+            if (received < 0) {
+                err = errno;
+                if (EAGAIN == err
+                        || EWOULDBLOCK == err) {
+                    /* this is not error, just reset err and received*/
+                    err = 0;
+                    received = 0;
+                } else {
+                    mError = err;
+                    break;
+                }
+            } else if (received == 0) {
+                /* this mean that is closed */
+                mClosed = true;
+            }
+        } while(0);
+
+        return err;
+    }
+
+    /* recv len bytes unless error occurs */
+    int RecvAll(char *buf, int len)
     {
         int toRecv = len;
         int recved = 0;
         int ret = 0;
         int err = 0;
+        if (NoOK()) {
+            return EINVAL;
+        }
 
         while(1)
         {
@@ -323,10 +397,14 @@ public:
                 ret = recv(mSocket, buf + recved,toRecv,0);
             } while(ret<0&&(( EAGAIN == errno ) || ( EWOULDBLOCK == errno )));
 
-            if ( ret < 0 ) {
+            if (ret < 0) {
+                err = errno;
+                mError = err;
                 error_log("recv buffer failed, errno: " << errno
                         << ", errstr: " << strerror(errno));
-                assert(0);
+                break;
+            } else if (ret == 0) {
+                mClosed = true;
                 break;
             }
 
@@ -347,6 +425,8 @@ private:
     short mPort;
     bool mPreRecv;
     int mSocket;
+    bool mClosed;
+    int mError;
 };
 
 #endif
