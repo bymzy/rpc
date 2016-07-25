@@ -15,7 +15,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#include "log.hpp"
+#include "Log.hpp"
 #include "common.h"
 
 #define MAX_BACK_LOG 1000
@@ -313,6 +313,11 @@ public:
         }
 
         return err;
+    }
+
+    bool HasPreRecv()
+    {
+        return mPreRecv;
     }
 
     /* pre recv the lenth to recv */

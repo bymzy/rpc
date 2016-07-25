@@ -4,6 +4,8 @@
 #include <string.h>
 #include "Msg.hpp"
 
+pthread_mutex_t Msg::lock = PTHREAD_MUTEX_INITIALIZER;
+
 Msg& Msg::operator << (const int& r)
 {
     int temp = htonl(r);

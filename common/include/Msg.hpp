@@ -3,13 +3,17 @@
 #ifndef __MSG_HPP__
 #define __MSG_HPP__
 
-#include <assert.h>
+#include <arpa/inet.h>
+#include <pthread.h>
 #include <unistd.h>
+
+#include <assert.h>
 #include <stdlib.h>
-#include <string>
 #include <memory.h>
 
-const static int HEAD_LENGTH = 8;
+#include <string>
+
+#define HEAD_LENGTH  8
 
 class Msg
 {
@@ -21,15 +25,15 @@ public:
      * */
 
 public:
-    /* @param len  length of data not include HEAD_LENGTH byte head
+    /* @param len  length of real data, not include HEAD_LENGTH byte head
      * */
-    Msg(int len) : mData(NULL), mReadOffset(0), mWriteOffset(0), mMallocSize(len + HEAD_LENGTH)
+    Msg(int len) : mRef(1), mData(NULL), mReadOffset(0), mWriteOffset(0), mMallocSize(len + HEAD_LENGTH)
     {
         mData = static_cast<char *>(malloc(sizeof(char) * mMallocSize));
         assert(mData != 0 && "assert if malloc failed!");
     }
     
-    Msg() : mData(NULL), mReadOffset(0), mWriteOffset(0), mMallocSize(0)
+    Msg() : mRef(1), mData(NULL), mReadOffset(0), mWriteOffset(0), mMallocSize(0)
     {
         mMallocSize = getpagesize();
         mData = static_cast<char *>(malloc(sizeof(char) * mMallocSize));
@@ -78,6 +82,12 @@ public:
         return mMallocSize;
     }
 
+    void SetLen(int len)
+    {
+        int temp = htonl(len);
+        memcpy(mData, &temp , sizeof(int));
+    }
+
 private:
     /* current left size */
     int LeftSize()
@@ -106,6 +116,26 @@ private:
             _temp = NULL;
         }
         return 0;
+    }
+public:
+    int mRef;
+    static pthread_mutex_t lock;
+    static void Decref(Msg *msg)
+    {
+        pthread_mutex_lock(&Msg::lock);
+        assert(msg->mRef > 0);
+        --msg->mRef;
+        if (msg->mRef <= 0) {
+            delete msg;
+        }
+        pthread_mutex_unlock(&Msg::lock);
+    }
+    static void Incref(Msg *msg)
+    {
+        pthread_mutex_lock(&Msg::lock);
+        assert(msg->mRef > 0);
+        ++msg->mRef;
+        pthread_mutex_unlock(&Msg::lock);
     }
 
 private:

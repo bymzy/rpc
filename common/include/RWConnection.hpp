@@ -9,49 +9,40 @@
 
 class RWConnection {
 public:
-    RWConnection(Driver * driver, int fd):mDriver(driver), mFd(fd)
+    RWConnection(Driver * driver):mDriver(driver)
     {
     }
     virtual ~RWConnection()
     {
-
     }
 
 public:
-    int GetFd()
-    {
-        return mFd;
-    }
-
     /* regist read event for this connection */ 
-    void RegistReadEvent()
+    void RegistReadEvent(int fd)
     {
-        mDriver->RegistReadEvent(this);
+        mDriver->RegistReadEvent(fd, this);
     }
 
     /* regist write event for this connection */
-    void RegistWriteEvent()
+    void RegistWriteEvent(int fd)
     {
-        mDriver->RegistWriteEvent(this);
+        mDriver->RegistWriteEvent(fd, this);
     }
 
-    void RegistRWEvent()
+    void RegistRWEvent(int fd)
     {
-        RegistReadEvent();
-        RegistWriteEvent();
+        RegistReadEvent(fd);
+        RegistWriteEvent(fd);
     }
 
     /* try to send len bytes */
-    virtual int WriteData() = 0;
+    virtual int WriteData(int fd) = 0;
 
     /* try read data from fd */
-    virtual int ReadData() = 0;
+    virtual int ReadData(int fd) = 0;
 
 public:
-    /* fd to read write */
-    int mFd;
-
-    /* set driver */
+    /* driver pointer */
     Driver *mDriver;
 };
 
