@@ -69,6 +69,8 @@ Driver::UnRegistReadEvent(int fd, RWConnection *conn)
     std::map<int, EventInfo*>::iterator iter;
     EventInfo *info = NULL;
 
+    trace_log("add read event for socket: " << fd);
+
     do {
         iter = mEventsInfo.find(fd);
         if (iter == mEventsInfo.end()) {
@@ -94,6 +96,8 @@ Driver::RegistWriteEvent(int fd, RWConnection *conn)
     std::map<int, EventInfo*>::iterator iter;
     EventInfo *info = NULL;
 
+    trace_log("add write event for socket: " << fd);
+
     do {
         iter = mEventsInfo.find(fd);
         if (iter != mEventsInfo.end()) {
@@ -107,6 +111,7 @@ Driver::RegistWriteEvent(int fd, RWConnection *conn)
         struct event *writeEvent = event_new(mEventBase, fd,
                 EV_READ | EV_PERSIST, WriteHandler, conn);
         event_add(writeEvent, NULL);
+
 
         if (NULL == info) {
             info = new EventInfo();

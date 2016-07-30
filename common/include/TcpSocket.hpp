@@ -137,12 +137,12 @@ public:
         return err;
     }
 
-    int Accept(int& fd, std::string& ip, short& port)
+    int Accept(int& fd, std::string& ip, int& port)
     {
         int tempFd = -1;
         int err = 0;
         struct sockaddr_in clientAddr;
-        socklen_t len = sizeof(socklen_t);
+        socklen_t len = sizeof(sockaddr_in);
 
         do {
             tempFd = accept(mSocket, (struct sockaddr*)&clientAddr, &len);
@@ -153,8 +153,8 @@ public:
                 break;
             }
 
-            ip = inet_ntoa(clientAddr.sin_addr);
-            port = ntohs(clientAddr.sin_port);
+            ip = GetPeerIP(&clientAddr);
+            port = GetPeerPort(&clientAddr);
             fd = tempFd;
         } while(0);
 
@@ -172,7 +172,7 @@ public:
         return err;
     }
 
-    void SetAddr(std::string ip , short port)
+    void SetAddr(std::string ip , int port)
     {
         mIP = ip;
         mPort = port;
@@ -192,8 +192,8 @@ public:
     int SetReuseAddr()
     {
         int err = 0;
-        
         int opt = 1;
+
         err = setsockopt(mSocket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(int));
         if (0 != err) {
             err = errno;
@@ -273,11 +273,13 @@ public:
         sent = send(mSocket, buf, len, 0);
         if (sent < 0) {
             err = errno;
-            if (err == EAGAIN ||
-                    err == EWOULDBLOCK) {
+            if (err != EAGAIN &&
+                    err != EWOULDBLOCK) {
                 error_log("send buffer failed, errno: " << errno
                         << ", errstr: " << strerror(errno));
                 mError = err;
+            } else {
+                err = 0;
             }
         }
         
@@ -447,7 +449,7 @@ public:
 
 public:
     std::string mIP;
-    short mPort;
+    int mPort;
     bool mPreRecv;
     int mSocket;
     bool mClosed;

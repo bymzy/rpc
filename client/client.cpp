@@ -28,17 +28,31 @@ int main()
 
         std::string data = "Hello";
 
-        debug_log("going to send " << data.length() << "bytes");
 
         Msg msg;
         msg << data;
         msg.SetLen();
 
+        debug_log("going to send " << msg.GetTotalLen() << "bytes");
         client.SendAll(msg.GetBuffer(), msg.GetTotalLen());
+
+        int toRecv = 0;
+        err = client.PreRecv(toRecv);
+        if (err != 0) {
+            break;
+        }
+
+        Msg *msg2 = new Msg(toRecv);
+        client.RecvAll(msg2->GetBuffer() + 4, toRecv + HEAD_LENGTH - 4);
+
+        (*msg2) >> data;
+        std::cout << data << std::endl;
+
         sleep(100);
         client.Close();
 
     } while(0);
+
 
     return err;
 }

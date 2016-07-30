@@ -57,12 +57,46 @@ NetService::AcceptConnection(OperContext *ctx)
 }
 
 void 
-NetService::RecvMsg(Msg *msg)
+NetService::RecvMsg(OperContext *ctx)
 {
+    Msg *msg = ctx->GetMessage();
     std::string data;
-    msg->operator>>(data);
-    std::cout<< "receive data from client: " << data << std::endl;
+    (*msg)>>(data);
+    std::cout<< "receive data from client, conn id:  " << ctx->GetConnID() << data << std::endl;
     delete msg;
+    ctx->SetMessage(NULL);
+
+
+    OperContext *replyctx = new OperContext(OperContext::OP_SEND);
+    Msg *repmsg = new Msg();
+    (*repmsg) << "this is reply from netservice!";
+    repmsg->SetLen();
+    replyctx->SetMessage(repmsg);
+    replyctx->SetConnID(ctx->GetConnID());
+    Enqueue(replyctx);
+    OperContext::DecRef(replyctx);
+}
+
+void
+NetService::SendMsg(OperContext *ctx)
+{
+    std::map<uint64_t, TcpConnection*>::iterator iter;
+    TcpConnection *conn = NULL;
+
+    do {
+        iter = mConns.find(ctx->GetConnID());
+        if (iter == mConns.end()) {
+            delete ctx->GetMessage();
+            error_log("send msg, but connection not found!");
+            break;
+        }
+        
+        conn = iter->second;
+        conn->Enqueue(ctx->GetMessage());
+        conn->WriteData(conn->mSocket->GetFd());
+    } while(0);
+
+    ctx->SetMessage(NULL);
 }
 
 void 
@@ -109,8 +143,10 @@ NetService::Process(OperContext *ctx)
             AcceptConnection(ctx);
             break;
         case OperContext::OP_RECV:
-            RecvMsg(ctx->GetMessage());
-            ctx->SetMessage(NULL);
+            RecvMsg(ctx);
+            break;
+        case OperContext::OP_SEND:
+            SendMsg(ctx);
             break;
         case OperContext::OP_DROP:
             DropConnection(ctx);

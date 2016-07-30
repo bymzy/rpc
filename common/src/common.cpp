@@ -56,4 +56,13 @@ std::string GetPeerInfo(struct sockaddr_in * paddr)
     return str;
 }
 
+std::string GetPeerIP(struct sockaddr_in *paddr)
+{
+    return std::string(inet_ntoa(paddr->sin_addr));
+}
+
+int GetPeerPort(struct sockaddr_in *paddr)
+{
+    return ntohs(paddr->sin_port);
+}
 

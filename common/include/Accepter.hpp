@@ -36,7 +36,7 @@ public:
         int err = 0;
         int clientFd = -1;
         std::string ip;
-        short port;
+        int port = 0;
 
         do {
             err = mListenSocket->Accept(clientFd, ip, port);
@@ -50,10 +50,10 @@ public:
                 break;
             }
             
+            debug_log("accpeter accept client " << ip << ":" << port);
             clientSocket->SetAddr(ip, port);
 
             AcceptContext *ctx = new AcceptContext(clientSocket);
-            debug_log("accepter enque new context!");
             mNetService->Enqueue(ctx);
             OperContext::DecRef(ctx);
 

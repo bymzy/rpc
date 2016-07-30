@@ -64,6 +64,16 @@ public:
         return mUnion.mSyncClosure;
     }
 
+    uint64_t GetConnID()
+    {
+        return mConnID;
+    }
+
+    void SetConnID(uint64_t connID)
+    {
+        mConnID = connID; 
+    }
+
 public:
     int mRef;
     static pthread_mutex_t lock;

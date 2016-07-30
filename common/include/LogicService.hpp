@@ -12,7 +12,11 @@ public:
     LogicService(std::string name): mName(name), mRunning(false)
     {
         mThread = new Thread(name, false);
-        pthread_mutex_init(&mMutex, NULL);
+        pthread_mutexattr_t mutexattr;
+        pthread_mutexattr_init(&mutexattr);
+        pthread_mutexattr_settype(&mutexattr, PTHREAD_MUTEX_RECURSIVE);
+        pthread_mutex_init(&mMutex, &mutexattr);
+        pthread_mutexattr_destroy(&mutexattr);
         pthread_cond_init(&mCond, NULL);
     }
     virtual ~LogicService()

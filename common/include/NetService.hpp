@@ -37,7 +37,9 @@ public:
     /* process stop */
     void ProcessStop(OperContext *ctx);
     /* recv msg */
-    void RecvMsg(Msg *msg);
+    void RecvMsg(OperContext *ctx);
+    /* send msg */
+    void SendMsg(OperContext *ctx);
 
 public:
     /* current connections */

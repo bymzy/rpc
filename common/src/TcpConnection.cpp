@@ -67,6 +67,7 @@ TcpConnection::ReadData(int fd)
         /* recved full message , enque it to logic service */
         OperContext *ctx = new OperContext(OperContext::OP_RECV);
         ctx->SetMessage(mCurrentRecvMsg);
+        ctx->SetConnID(mConnID);
         mLogicService->Enqueue(ctx);
         OperContext::DecRef(ctx);
         ResetRecv();
@@ -78,9 +79,8 @@ TcpConnection::ReadData(int fd)
         ResetRecv();
 
         UnRegistRWEvent(mSocket->GetFd());
-        debug_log("enque op drop to netservice !");
         OperContext *ctx = new OperContext(OperContext::OP_DROP);
-        ctx->mConnID = mConnID;
+        ctx->SetConnID(mConnID);
         mLogicService->Enqueue(ctx);
         OperContext::DecRef(ctx);
     }
@@ -102,16 +102,27 @@ TcpConnection::WriteData(int fd)
 
         if (NULL == mCurrentSendMsg
                 && !InitNextSend()) {
-            /* current not meesage to send */
-            //trace_log("current no message to send, conn id: " << mConnID);
-            return 0;
+            trace_log("current no message to send, conn id: " << mConnID);
+            break;
         }
+
+        std::string data;
+        (*mCurrentSendMsg) >> data;
+        debug_log("string to send: " << data
+                << ", tosend: " << mToSend
+                << ", sent: " << mSent);
 
         err = mSocket->Send(mCurrentSendMsg->GetBuffer() + mSent, 
                 mToSend, sent);
         if (0 != err) {
             error_log("TcpConnection::WriteData failed, error: " << err
-                    << ", conn id: " << mConnID);
+                    << ", conn id: " << mConnID
+                    << ", error: " << strerror(err));
+            UnRegistRWEvent(mSocket->GetFd());
+            OperContext *ctx = new OperContext(OperContext::OP_DROP);
+            ctx->SetConnID(mConnID);
+            mLogicService->Enqueue(ctx);
+            OperContext::DecRef(ctx);
             break;
         }
 
@@ -119,17 +130,13 @@ TcpConnection::WriteData(int fd)
         mToSend -= sent;
         if (mToSend == 0) {
             /* you see all msg is delete on network driver */
+            trace_log("message send complete, conn id: " << mConnID);
             delete mCurrentSendMsg;
             ResetSend();
-
-            UnRegistRWEvent(mSocket->GetFd());
-            OperContext *ctx = new OperContext(OperContext::OP_DROP);
-            mLogicService->Enqueue(ctx);
-            OperContext::DecRef(ctx);
         }
     } while(0);
 
-    return 0;
+    return err;
 }
 
 bool
@@ -139,6 +146,9 @@ TcpConnection::InitNextSend()
     pthread_mutex_lock(&mMutex);
     if (!mToSendMsg.empty()) {
         mCurrentSendMsg = mToSendMsg.front();
+        mToSend = mCurrentSendMsg->GetTotalLen();
+        mSent = 0;
+
         mToSendMsg.pop_front();
         hasMsg = true;
     }
@@ -157,6 +167,14 @@ TcpConnection::FreeNotSendMsg()
         delete msg;
         mToSendMsg.pop_front();
     }
+    pthread_mutex_unlock(&mMutex);
+}
+
+void
+TcpConnection::Enqueue(Msg *msg)
+{
+    pthread_mutex_lock(&mMutex);
+    mToSendMsg.push_back(msg);
     pthread_mutex_unlock(&mMutex);
 }
 

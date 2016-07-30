@@ -17,8 +17,9 @@ class TcpConnection : public RWConnection {
 public:
     TcpConnection(LogicService *logic, Driver *driver, TcpSocket *sock, 
             uint64_t connID): RWConnection(driver),
-            mCurrentRecvMsg(NULL), mCurrentSendMsg(NULL),mSocket(sock),
-            mLogicService(logic), mConnID(connID)
+            mToRecv(0), mRecved(0), mCurrentRecvMsg(NULL),
+            mToSend(0), mSent(0), mCurrentSendMsg(NULL),
+            mSocket(sock), mLogicService(logic), mConnID(connID)
     {
         pthread_mutex_init(&mMutex, NULL);
     }
@@ -53,10 +54,13 @@ public:
         return mSocket->mIP;
     }
 
-    short GetClientPort()
+    int GetClientPort()
     {
         return mSocket->mPort;
     }
+
+    /* enque msg */
+    void Enqueue(Msg *msg);
 
 public:
     /* current msg recv len */

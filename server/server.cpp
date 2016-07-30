@@ -14,7 +14,7 @@ int main()
 
     do {
         netService->Start();
-        while(i++ < 3)
+        while(i++ < 1000)
             sleep(1);
 
         netService->Stop();
