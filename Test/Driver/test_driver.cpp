@@ -10,6 +10,7 @@ int main()
     driver->Start();
     sleep(3);
     driver->Stop();
+    delete driver;
 
     return 0;
 }

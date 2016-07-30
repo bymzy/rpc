@@ -1,9 +1,11 @@
 
 
 
+#include <unistd.h>
+
 #include "Log.hpp"
 #include "TcpSocket.hpp"
-#include <unistd.h>
+#include "Msg.hpp"
 
 int main()
 {
@@ -17,7 +19,7 @@ int main()
             break;
         }
 
-        err = client.Connect("127.0.0.1", 8888);
+        err = client.Connect("127.0.0.1", 2141);
         if (0 != err) {
             error_log("connect failed, errno: " << errno
                     << ", errstr: " << strerror(errno));
@@ -27,13 +29,13 @@ int main()
         std::string data = "Hello";
 
         debug_log("going to send " << data.length() << "bytes");
-        char buf[4];
-        int len = htonl(data.length());
-        memcpy(buf, &len, sizeof(int));
 
-        client.SendAll(buf, 4);
-        client.SendAll(data.c_str(), data.length());
+        Msg msg;
+        msg << data;
+        msg.SetLen();
 
+        client.SendAll(msg.GetBuffer(), msg.GetTotalLen());
+        sleep(100);
         client.Close();
 
     } while(0);
