@@ -72,6 +72,11 @@ public:
         int err = 0;
 
         do {
+            err = SetReuseAddr();
+            if (0 != err) {
+                break;
+            }
+
             struct sockaddr_in listenAddr;
             memset(&listenAddr, 0, sizeof(sockaddr_in) );
             listenAddr.sin_family = AF_INET;
@@ -82,12 +87,14 @@ public:
             if (0 != err) {
                 err = errno;
                 error_log(strerror(errno));
+                break;
             }
 
             err = listen(mSocket, MAX_BACK_LOG);
             if (0 != err) {
                 err = errno;
                 error_log(strerror(errno));
+                break;
             }
 
             mIP = ip;
@@ -320,6 +327,11 @@ public:
         return mPreRecv;
     }
 
+    void SetPreRecv(bool has)
+    {
+        mPreRecv = has;
+    }
+
     /* pre recv the lenth to recv */
     int PreRecv(int& len)
     {
@@ -339,6 +351,8 @@ public:
 
             err = RecvAll(buf, sizeof(int));
             if (0 != err) {
+                trace_log("PreRecv failed! error: " <<err
+                        << ", errstr: " << strerror(err));
                 break;
             }
 
@@ -372,12 +386,16 @@ public:
                     received = 0;
                 } else {
                     mError = err;
+                    error_log("socket recv failed, ip: " << mIP
+                            << ", port: " << mPort);
                     break;
                 }
             } else if (received == 0) {
                 /* this mean that is closed */
+                err = EINVAL;
                 mClosed = true;
             }
+            trace_log("socket received " << received << " bytes!");
         } while(0);
 
         return err;
@@ -409,6 +427,8 @@ public:
                         << ", errstr: " << strerror(errno));
                 break;
             } else if (ret == 0) {
+                trace_log("client closed!");
+                err = EINVAL;
                 mClosed = true;
                 break;
             }
@@ -425,7 +445,7 @@ public:
         return err;
     }
 
-private:
+public:
     std::string mIP;
     short mPort;
     bool mPreRecv;

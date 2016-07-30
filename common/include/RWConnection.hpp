@@ -18,26 +18,52 @@ public:
 
 public:
     /* regist read event for this connection */ 
-    void RegistReadEvent(int fd)
+    int RegistReadEvent(int fd)
     {
-        mDriver->RegistReadEvent(fd, this);
+        assert(0 == mDriver->RegistReadEvent(fd, this));
+        return 0;
     }
 
     /* regist write event for this connection */
-    void RegistWriteEvent(int fd)
+    int RegistWriteEvent(int fd)
     {
-        mDriver->RegistWriteEvent(fd, this);
+        assert(0 == mDriver->RegistWriteEvent(fd, this));
+        return 0;
     }
 
-    void RegistRWEvent(int fd)
+    int RegistRWEvent(int fd)
     {
-        RegistReadEvent(fd);
-        RegistWriteEvent(fd);
+        assert(0 == RegistReadEvent(fd));
+        assert(0 == RegistWriteEvent(fd));
+        return 0;
     }
+
+    /* unregist read event */
+    int UnRegistReadEvent(int fd)
+    {
+        assert(0 == mDriver->UnRegistReadEvent(fd, this));
+        return 0;
+    }
+
+    /* unregist read event */
+    int UnRegistWriteEvent(int fd)
+    {
+        assert(0 == mDriver->UnRegistWriteEvent(fd, this));
+        return 0;
+    }
+
+    /* unregist read write event */
+    int UnRegistRWEvent(int fd)
+    {
+        UnRegistReadEvent(fd);
+        UnRegistWriteEvent(fd);
+        return 0;
+    }
+
+    /* unregist write event */
 
     /* try to send len bytes */
     virtual int WriteData(int fd) = 0;
-
     /* try read data from fd */
     virtual int ReadData(int fd) = 0;
 

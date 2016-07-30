@@ -21,6 +21,13 @@
         std::cerr<<ss.str()<<std::endl;\
 }\
 
+#define trace_log(data)\
+    {\
+        std::stringstream ss;\
+        ss<<data;\
+        std::cerr<<ss.str()<<std::endl;\
+}\
+
 #endif
 
 

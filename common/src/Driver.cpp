@@ -19,7 +19,7 @@ static void WriteHandler(int fd, short event, void *arg)
 
 static void TimeOut(int fd, short event, void *arg)
 {
-    std::cout << "timeout!" << std::endl;
+ //   std::cout << "timeout!" << std::endl;
 }
 
 static void * func(void *arg)
@@ -46,7 +46,6 @@ Driver::RegistReadEvent(int fd, RWConnection *conn)
             info = iter->second;
         }
 
-
         struct event *readEvent = event_new(mEventBase, fd,
                 EV_READ | EV_PERSIST, ReadHandler, conn);
         event_add(readEvent, NULL);
@@ -58,6 +57,31 @@ Driver::RegistReadEvent(int fd, RWConnection *conn)
 
         info->_read = readEvent;
         info->_read_conn = conn;
+    } while(0);
+
+    return err;
+}
+
+int
+Driver::UnRegistReadEvent(int fd, RWConnection *conn)
+{
+    int err = 0;
+    std::map<int, EventInfo*>::iterator iter;
+    EventInfo *info = NULL;
+
+    do {
+        iter = mEventsInfo.find(fd);
+        if (iter == mEventsInfo.end()) {
+            err = ENOENT;
+            break;
+        }
+
+        info = iter->second;
+        info->FreeReadEvent();
+        if (info->IsInvalid()) {
+            delete info;
+            mEventsInfo.erase(iter);
+        }
     } while(0);
 
     return err;
@@ -80,7 +104,6 @@ Driver::RegistWriteEvent(int fd, RWConnection *conn)
             info = iter->second;
         }
 
-
         struct event *writeEvent = event_new(mEventBase, fd,
                 EV_READ | EV_PERSIST, WriteHandler, conn);
         event_add(writeEvent, NULL);
@@ -92,6 +115,31 @@ Driver::RegistWriteEvent(int fd, RWConnection *conn)
 
         info->_write= writeEvent;
         info->_write_conn = conn;
+    } while(0);
+
+    return err;
+}
+
+int
+Driver::UnRegistWriteEvent(int fd, RWConnection *conn)
+{
+    int err = 0;
+    std::map<int, EventInfo*>::iterator iter;
+    EventInfo *info = NULL;
+
+    do {
+        iter = mEventsInfo.find(fd);
+        if (iter == mEventsInfo.end()) {
+            err = ENOENT;
+            break;
+        }
+
+        info = iter->second;
+        info->FreeWriteEvent();
+        if (info->IsInvalid()) {
+            delete info;
+            mEventsInfo.erase(iter);
+        }
     } while(0);
 
     return err;
@@ -170,6 +218,7 @@ Driver::Init()
 int
 Driver::Finit()
 {
+    event_del(mTimerEvent);
     event_free(mTimerEvent);
     return 0;
 }

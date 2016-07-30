@@ -88,6 +88,12 @@ public:
         memcpy(mData, &temp , sizeof(int));
     }
 
+    void SetLen()
+    {
+        int temp = htonl(mWriteOffset);
+        memcpy(mData, &temp , sizeof(int));
+    }
+
 private:
     /* current left size */
     int LeftSize()
