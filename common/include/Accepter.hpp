@@ -82,7 +82,7 @@ public:
 
     int StopListen()
     {
-        UnRegistRWEvent(mListenSocket->GetFd());
+        UnRegistReadEvent(mListenSocket->GetFd());
     }
 
 public:

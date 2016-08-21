@@ -114,7 +114,12 @@ TcpConnection::WriteData(int fd)
             error_log("TcpConnection::WriteData failed, error: " << err
                     << ", conn id: " << mConnID
                     << ", error: " << strerror(err));
+            delete mCurrentSendMsg;
+            ResetSend();
+
             UnRegistRWEvent(mSocket->GetFd());
+
+            /* inform netservice clear this conn */
             OperContext *ctx = new OperContext(OperContext::OP_DROP);
             ctx->SetConnID(mConnID);
             mLogicService->Enqueue(ctx);

@@ -188,6 +188,8 @@ Driver::Stop()
 {
     int err = 0;
 
+    Finit();
+
     err = event_base_loopbreak(mEventBase);
     assert(0 == err);
     if (NULL != mEventBase) {
@@ -201,7 +203,6 @@ Driver::Stop()
         mThread = NULL;
     }
 
-    Finit();
     return err;
 }
 

@@ -21,10 +21,12 @@ public:
     }
     virtual ~LogicService()
     {
+        assert(mQueue.size() == 0);
         pthread_mutex_destroy(&mMutex);
         pthread_cond_destroy(&mCond);
         if (NULL != mThread) {
             delete mThread;
+            mThread = NULL;
         }
     }
 

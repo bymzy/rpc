@@ -30,6 +30,7 @@ LogicService::Run()
         }
 
         if (!mRunning) {
+            pthread_mutex_unlock(&mMutex);
             break;
         }
 
