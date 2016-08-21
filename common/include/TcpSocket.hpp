@@ -360,6 +360,8 @@ public:
 
             memcpy(&tempLen, buf, sizeof(int));
             len = ntohl(tempLen);
+
+            debug_log("prerecv len: " << len);
         } while(0);
 
         if (buf != NULL) {

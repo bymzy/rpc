@@ -39,13 +39,10 @@ public:
 
     /* clear recv flag */
     void ResetRecv();
-
     /* clear send flag */
     void ResetSend();
-
     /* free msg that is not send */
     void FreeNotSendMsg();
-
     /* get next message from deque front */
     bool InitNextSend();
 

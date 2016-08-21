@@ -6,7 +6,41 @@
 #include "Log.hpp"
 #include "TcpSocket.hpp"
 #include "Msg.hpp"
+#include "NetService.hpp"
+#include "Context.hpp"
 
+
+int main()
+{
+    int err = 0;
+    uint64_t connId;
+    NetService *netService = new NetService(NULL, "clinet netservice");
+    netService->Start();
+    err = netService->StartConnectRemote("127.0.0.1", 2141, connId);
+    if (err != 0) {
+        error_log("start connect remote failed!");
+    }
+
+
+    sleep(1);
+    debug_log("client conn id " << connId);
+    OperContext *replyctx = new OperContext(OperContext::OP_SEND);
+    Msg *repmsg = new Msg();
+    (*repmsg) << "hello server!";
+    repmsg->SetLen();
+    replyctx->SetMessage(repmsg);
+    replyctx->SetConnID(connId);
+    netService->Enqueue(replyctx);
+    OperContext::DecRef(replyctx);
+
+    sleep(2);
+    netService->Stop();
+    delete netService;
+
+    return err;
+}
+
+#if 0
 int main()
 {
     int err = 0;
@@ -56,5 +90,6 @@ int main()
 
     return err;
 }
+#endif
 
 

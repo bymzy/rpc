@@ -46,7 +46,6 @@ Msg& Msg::operator >> (int& r)
 Msg& Msg::operator >> (std::string& r)
 {
     int len = 0;
-    len = ntohl(len);
     this->operator>>(len);
     r.assign(mData + HEAD_LENGTH + mReadOffset, len);
     mReadOffset += len;

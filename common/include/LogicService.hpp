@@ -39,22 +39,43 @@ public:
 public:
     int Start()
     {
+        int err = 0;
         assert(NULL != mThread);
-        return mThread->Start(LogicService::thread_func, this);
+
+        do {
+            err = mThread->Start(LogicService::thread_func, this);
+            if (err != 0) {
+                break;
+            }
+
+            /* wait server work! */
+            OperContext *ctx = new OperContext(OperContext::OP_START);
+            SyncClosure sync;
+            ctx->SetClosure(&sync);
+            Enqueue(ctx);
+            sync.Wait();
+            ctx->SetClosure(NULL);
+            OperContext::DecRef(ctx);
+
+        } while(0);
+
+        return err;
     }
+
     void Stop()
     {
-        OperContext *ctx = new OperContext(OperContext::OP_STOP);
-        SyncClosure sync;
-        ctx->SetClosure(&sync);
-        Enqueue(ctx);
-        ctx->GetClosure()->Wait();
-        ctx->SetClosure(NULL);
-        OperContext::DecRef(ctx);
+        /* finitialize logic service */
+        Finit();
+
+        pthread_mutex_lock(&mMutex);
+        mRunning = false;
+        pthread_cond_signal(&mCond);
+        pthread_mutex_unlock(&mMutex);
         mThread->Join();
     }
 
     virtual int Init() = 0;
+    virtual int Finit() = 0;
     /* run thread loop */
     void Run();
     /* process ctx */

@@ -21,11 +21,16 @@ LogicService::Run()
 
     debug_log("logic service running!");
     mRunning = true;
-    while(mRunning) 
+    while (mRunning)
     {
         pthread_mutex_lock(&mMutex);
-        while (mQueue.size() <= 0) {
+        while (mQueue.size() <= 0
+                && mRunning) {
             pthread_cond_wait(&mCond, &mMutex);
+        }
+
+        if (!mRunning) {
+            break;
         }
 
         /* now there is something in queure try process it */

@@ -163,6 +163,7 @@ Driver::Run()
     int err = 0;
 
     do {
+        assert(mEventBase != NULL);
         err = Init();
         if (0 != err) {
             error_log("Driver " << mName
@@ -170,6 +171,7 @@ Driver::Run()
             break;
         }
 
+        assert(mEventBase != NULL);
         err = event_base_loop(mEventBase, 0);
         if (0 != err) {
             error_log("driver event_base_loop failed, error: " << err);
@@ -212,6 +214,7 @@ Driver::FreeEvents()
 int
 Driver::Init()
 {
+    assert(mEventBase != NULL);
     struct timeval timeout;
     timeout.tv_sec = 0;
     timeout.tv_usec = 1000000;

@@ -106,11 +106,7 @@ TcpConnection::WriteData(int fd)
             break;
         }
 
-        std::string data;
-        (*mCurrentSendMsg) >> data;
-        debug_log("string to send: " << data
-                << ", tosend: " << mToSend
-                << ", sent: " << mSent);
+        assert(mCurrentSendMsg != NULL);
 
         err = mSocket->Send(mCurrentSendMsg->GetBuffer() + mSent, 
                 mToSend, sent);

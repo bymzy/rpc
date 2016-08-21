@@ -80,6 +80,11 @@ public:
         return err;
     }
 
+    int StopListen()
+    {
+        UnRegistRWEvent(mListenSocket->GetFd());
+    }
+
 public:
     /* net service pointer */
     NetService * mNetService;

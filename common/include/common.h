@@ -13,6 +13,8 @@ int StringAsInt(const std::string& str);
 std::string GetPeerInfo(struct sockaddr_in *);
 std::string GetPeerIP(struct sockaddr_in *paddr);
 int GetPeerPort(struct sockaddr_in *paddr);
+std::string i2s(const int& i);
+int s2i(const std::string& s);
 
 
 #endif

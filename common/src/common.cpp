@@ -44,6 +44,22 @@ int StringAsInt(const std::string& str)
     return i;
 }
 
+std::string i2s(const int& i)
+{
+    std::stringstream ss;
+    ss << i;
+    return ss.str();
+}
+
+int s2i(const std::string& s)
+{
+    int i;
+    std::stringstream ss;
+    ss<<s;
+    ss>>i;
+    return i;
+}
+
 std::string GetPeerInfo(struct sockaddr_in * paddr)
 {
     std::string str;
