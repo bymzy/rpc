@@ -167,6 +167,8 @@ public:
 
         if (-1 != mSocket) {
             err = close(mSocket);
+            mSocket = -1;
+            mClosed = true;
         }
 
         return err;

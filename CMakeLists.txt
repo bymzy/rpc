@@ -9,6 +9,9 @@ set(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g -ggdb")
 include_directories(common/include /usr/local/include)
 link_directories(${PROJECT_BINARY_DIR}/lib /usr/local/lib)
 
+add_custom_target(cs)
+add_dependencies(cs server client)
+
 add_subdirectory(server)
 add_subdirectory(client)
 add_subdirectory(common)

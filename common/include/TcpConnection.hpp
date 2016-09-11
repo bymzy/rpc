@@ -19,9 +19,13 @@ public:
             uint64_t connID): RWConnection(driver),
             mToRecv(0), mRecved(0), mCurrentRecvMsg(NULL),
             mToSend(0), mSent(0), mCurrentSendMsg(NULL),
-            mSocket(sock), mLogicService(logic), mConnID(connID)
+            mSocket(sock), mLogicService(logic), mConnID(connID), mClosed(false)
     {
-        pthread_mutex_init(&mMutex, NULL);
+        pthread_mutexattr_t mutexattr;
+        pthread_mutexattr_init(&mutexattr);
+        pthread_mutexattr_settype(&mutexattr, PTHREAD_MUTEX_RECURSIVE);
+        pthread_mutex_init(&mMutex, &mutexattr);
+        pthread_mutexattr_destroy(&mutexattr);
     }
     virtual ~ TcpConnection()
     {
@@ -45,6 +49,9 @@ public:
     void FreeNotSendMsg();
     /* get next message from deque front */
     bool InitNextSend();
+    /* close connection: close socket, free not send meesage */
+    int Close();
+
 
     std::string GetClientIP()
     {
@@ -79,6 +86,7 @@ public:
 
     /* connid */
     uint64_t mConnID;
+    bool mClosed;
 };
 
 

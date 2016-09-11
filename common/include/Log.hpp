@@ -25,6 +25,7 @@
     {\
         std::stringstream ss;\
         ss<<data;\
+        std::cerr<<ss.str()<<std::endl;\
 }\
 
 #endif

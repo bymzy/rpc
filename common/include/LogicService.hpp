@@ -37,9 +37,15 @@ public:
     }
 
 public:
-    int Start()
+    /* you may overwrite Start function if you don't want to new one thread */
+    virtual int Start()
     {
         int err = 0;
+
+        if (mRunning) {
+            return 0;
+        }
+        mRunning = true;
         assert(NULL != mThread);
 
         do {
@@ -64,24 +70,38 @@ public:
 
     void Stop()
     {
-        /* finitialize logic service */
-        Finit();
-
         pthread_mutex_lock(&mMutex);
         mRunning = false;
         pthread_cond_signal(&mCond);
         pthread_mutex_unlock(&mMutex);
+
         mThread->Join();
     }
 
-    virtual int Init() = 0;
-    virtual int Finit() = 0;
+    /* init is something you want to do befor thread running */
+    virtual int Init()
+    {
+        return 0;
+    }
+    /* init is something you want to do befor thread stopped */
+    virtual int Finit()
+    {
+        return 0;
+    }
     /* run thread loop */
     void Run();
     /* process ctx */
-    virtual int Process(OperContext *ctx) = 0;
+    virtual bool Process(OperContext *ctx);
     /* enqueue ctx to logic service */
-    void Enqueue(OperContext *ctx);
+    bool Enqueue(OperContext *ctx);
+
+    /* start and stop of basic LogicService */
+    void ProcessStart(OperContext *ctx);
+    void ProcessStop(OperContext *ctx);
+
+#if 1
+    void RecvMsg(OperContext *ctx);
+#endif
 
 public:
     /* name of this logicservice */

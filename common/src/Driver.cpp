@@ -69,7 +69,7 @@ Driver::UnRegistReadEvent(int fd, RWConnection *conn)
     std::map<int, EventInfo*>::iterator iter;
     EventInfo *info = NULL;
 
-    trace_log("add read event for socket: " << fd);
+    trace_log("remove read event for socket: " << fd);
 
     do {
         iter = mEventsInfo.find(fd);
@@ -96,7 +96,7 @@ Driver::RegistWriteEvent(int fd, RWConnection *conn)
     std::map<int, EventInfo*>::iterator iter;
     EventInfo *info = NULL;
 
-    trace_log("add write event for socket: " << fd);
+    trace_log("remove write event for socket: " << fd);
 
     do {
         iter = mEventsInfo.find(fd);
@@ -150,17 +150,24 @@ Driver::UnRegistWriteEvent(int fd, RWConnection *conn)
     return err;
 }
 
-int Driver::Start()
-{
+int Driver::Start() {
     assert(NULL != mThread);
     mThread->Start(func, this);
+
+    while (!mRunning) {
+       usleep(100000);
+    }
+
     return 0;
 }
 
 int 
-Driver::Run()
-{
+Driver::Run() {
     int err = 0;
+
+    if (mRunning) {
+        return err;
+    }
 
     do {
         assert(mEventBase != NULL);
@@ -168,13 +175,17 @@ Driver::Run()
         if (0 != err) {
             error_log("Driver " << mName
                     << "start failed, error: " << err);
+            assert(err == 0);
             break;
         }
 
         assert(mEventBase != NULL);
+
+        mRunning = true;
         err = event_base_loop(mEventBase, 0);
         if (0 != err) {
             error_log("driver event_base_loop failed, error: " << err);
+            assert(err == 0);
             break;
         }
 
@@ -187,6 +198,13 @@ int
 Driver::Stop()
 {
     int err = 0;
+
+    if (!mRunning) {
+        return 0;
+    }
+
+    mRunning = false;
+    Finit();
 
     err = event_base_loopbreak(mEventBase);
     assert(0 == err);
@@ -201,7 +219,6 @@ Driver::Stop()
         mThread = NULL;
     }
 
-    Finit();
     return err;
 }
 

@@ -13,7 +13,7 @@ public:
     enum _type
     {
         /* message to send or received*/
-        OP_RECV,
+        OP_RECV = 0,
         OP_SEND,
         /* start stop logic service */
         OP_START,

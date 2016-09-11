@@ -66,13 +66,19 @@ public:
     int StartListen()
     {
         int err = 0;
-        mListenSocket = new TcpSocket();
-        mListenSocket->Create();
 
         do {
+            mListenSocket = new TcpSocket();
+            err = mListenSocket->Create();
+            if (0 != err) {
+                error_log("Accepter create failed!");
+                break;
+            }
+
             err = mListenSocket->Listen(mIP, mPort);
             if (0 != err) {
                 error_log("Accepter listen failed!");
+                break;
             }
             RegistReadEvent(mListenSocket->GetFd());
         } while(0);
@@ -82,7 +88,8 @@ public:
 
     int StopListen()
     {
-        UnRegistRWEvent(mListenSocket->GetFd());
+        UnRegistReadEvent(mListenSocket->GetFd());
+        return mListenSocket->Close();
     }
 
 public:

@@ -15,11 +15,7 @@ bool InvalidIP(const std::string& ip)
 {
     int ret = 0;
     ret = inet_addr(ip.c_str());
-    if ( INADDR_NONE == ret ) {
-        return true;
-    } else {
-        return false;
-    }
+    return INADDR_NONE == ret ? true : false;
 }
 
 bool InvalidPort(const std::string& port)

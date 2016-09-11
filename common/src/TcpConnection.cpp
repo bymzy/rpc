@@ -29,17 +29,20 @@ TcpConnection::ReadData(int fd)
     int err = 0;
     int dataLen = 0;
     int recved = 0;
+    pthread_mutex_lock(&mMutex);
 
     do {
         if (mSocket->NoOK()) {
             trace_log("event for write but socket no okay");
-            return EINVAL;
+            err = EINVAL;
+            break;
         }
 
         /* TODO change this to async */
         if (!mSocket->HasPreRecv()) {
             err = mSocket->PreRecv(dataLen);
-            if (0 != err) {
+            if (0 != err or dataLen < sizeof(int)) {
+                Close();
                 break;
             }
 
@@ -56,6 +59,7 @@ TcpConnection::ReadData(int fd)
                 mToRecv - mRecved, recved);
         if (0 != err) {
             error_log("TcpConnection read data failed, error: " << err);
+            Close();
             break;
         }
 
@@ -68,23 +72,28 @@ TcpConnection::ReadData(int fd)
         OperContext *ctx = new OperContext(OperContext::OP_RECV);
         ctx->SetMessage(mCurrentRecvMsg);
         ctx->SetConnID(mConnID);
-        mLogicService->Enqueue(ctx);
+        if (!mLogicService->Enqueue(ctx)) {
+            err = EINVAL;
+            ctx->SetMessage(NULL);
+        }
         OperContext::DecRef(ctx);
         ResetRecv();
     }
 
     if (0 != err) {
         /* unregist read write event */
-        delete mCurrentRecvMsg;
+        if (mCurrentRecvMsg != NULL) {
+            delete mCurrentRecvMsg;
+        }
         ResetRecv();
 
-        UnRegistRWEvent(mSocket->GetFd());
         OperContext *ctx = new OperContext(OperContext::OP_DROP);
         ctx->SetConnID(mConnID);
         mLogicService->Enqueue(ctx);
         OperContext::DecRef(ctx);
     }
 
+    pthread_mutex_unlock(&mMutex);
     return err;
 }
 
@@ -94,10 +103,12 @@ TcpConnection::WriteData(int fd)
     int err = 0;
     int sent = 0;
 
+    pthread_mutex_lock(&mMutex);
     do {
-        if (mSocket->NoOK()) {
+        if (mClosed || mSocket->NoOK()) {
             trace_log("event for write but socket no okay");
-            return EINVAL;
+            err = EINVAL;
+            break;
         }
 
         if (NULL == mCurrentSendMsg
@@ -114,7 +125,10 @@ TcpConnection::WriteData(int fd)
             error_log("TcpConnection::WriteData failed, error: " << err
                     << ", conn id: " << mConnID
                     << ", error: " << strerror(err));
-            UnRegistRWEvent(mSocket->GetFd());
+            ResetSend();
+            Close();
+
+            /* notify app that this connection occurs errors and should be dropped */
             OperContext *ctx = new OperContext(OperContext::OP_DROP);
             ctx->SetConnID(mConnID);
             mLogicService->Enqueue(ctx);
@@ -127,11 +141,13 @@ TcpConnection::WriteData(int fd)
         if (mToSend == 0) {
             /* you see all msg is delete on network driver */
             trace_log("message send complete, conn id: " << mConnID);
+            mToSendMsg.pop_front();
             delete mCurrentSendMsg;
             ResetSend();
         }
     } while(0);
 
+    pthread_mutex_unlock(&mMutex);
     return err;
 }
 
@@ -142,15 +158,37 @@ TcpConnection::InitNextSend()
     pthread_mutex_lock(&mMutex);
     if (!mToSendMsg.empty()) {
         mCurrentSendMsg = mToSendMsg.front();
+        assert(mCurrentSendMsg != NULL);
         mToSend = mCurrentSendMsg->GetTotalLen();
         mSent = 0;
 
+#if 0
+        /**
+        *
+        */
+
         mToSendMsg.pop_front();
+#endif
         hasMsg = true;
     }
     pthread_mutex_unlock(&mMutex);
 
     return hasMsg;
+}
+
+int
+TcpConnection::Close()
+{
+    pthread_mutex_lock(&mMutex);
+    if (!mClosed) {
+        mClosed = true;
+        UnRegistRWEvent(mSocket->GetFd());
+        mSocket->Close();
+        FreeNotSendMsg();
+    }
+    pthread_mutex_unlock(&mMutex);
+
+    return 0;
 }
 
 void 

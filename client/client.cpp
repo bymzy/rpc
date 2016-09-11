@@ -16,24 +16,34 @@ int main()
     uint64_t connId;
     NetService *netService = new NetService(NULL, "clinet netservice");
     netService->Start();
+
+#if 1
     err = netService->StartConnectRemote("127.0.0.1", 2141, connId);
     if (err != 0) {
         error_log("start connect remote failed!");
     }
 
+#endif
 
-    sleep(1);
     debug_log("client conn id " << connId);
-    OperContext *replyctx = new OperContext(OperContext::OP_SEND);
-    Msg *repmsg = new Msg();
-    (*repmsg) << "hello server!";
-    repmsg->SetLen();
-    replyctx->SetMessage(repmsg);
-    replyctx->SetConnID(connId);
-    netService->Enqueue(replyctx);
-    OperContext::DecRef(replyctx);
 
-    sleep(2);
+#if 1
+    for (int i=0; i < 1000; ++i) {
+        OperContext *replyctx = new OperContext(OperContext::OP_SEND);
+        Msg *repmsg = new Msg();
+        (*repmsg) << "hello server!";
+        repmsg->SetLen();
+        replyctx->SetMessage(repmsg);
+        replyctx->SetConnID(connId);
+        netService->Enqueue(replyctx);
+        OperContext::DecRef(replyctx);
+    }
+#endif
+
+#if 1
+    sleep(1000);
+#endif
+
     netService->Stop();
     delete netService;
 

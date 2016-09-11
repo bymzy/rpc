@@ -13,7 +13,7 @@ class RWConnection;
 
 class Driver {
 public:
-    Driver(std::string name): mName(name)
+    Driver(std::string name): mName(name), mRunning(false)
     {
         mThread = new Thread(name, false);
         mEventBase = event_base_new();
@@ -101,6 +101,7 @@ private:
     Thread *mThread;
     /* timer event */ 
     struct event *mTimerEvent;
+    bool mRunning;
 };
 
 

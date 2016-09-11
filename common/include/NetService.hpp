@@ -47,17 +47,21 @@ public:
     /* stop lisen and driver */
     virtual int Finit();
     /* process message */
-    virtual int Process(OperContext *ctx);
+    virtual bool Process(OperContext *ctx);
 
 public:
     /* accept connection */
     void AcceptConnection(OperContext *ctx);
     /* client dropped */
     void DropConnection(OperContext *ctx);
+
+#if 0
     /* process stop */
     void ProcessStop(OperContext *ctx);
     /* process start */
     void ProcessStart(OperContext *ctx);
+#endif
+
     /* recv msg */
     void RecvMsg(OperContext *ctx);
     /* send msg */

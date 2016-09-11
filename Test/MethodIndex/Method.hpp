@@ -35,6 +35,7 @@ public:
         }
 
         mMethodList[index] = method;
+        return 0;
     }
 
     Service::Method GetMethod(int index)

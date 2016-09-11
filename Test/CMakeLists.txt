@@ -4,5 +4,7 @@ add_subdirectory(MethodIndex)
 add_subdirectory(Msg)
 add_subdirectory(Thread)
 add_subdirectory(Driver)
+add_subdirectory(LogicService)
+
 
 

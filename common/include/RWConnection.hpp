@@ -14,6 +14,7 @@ public:
     }
     virtual ~RWConnection()
     {
+        mDriver = NULL;
     }
 
 public:
@@ -33,8 +34,8 @@ public:
 
     int RegistRWEvent(int fd)
     {
-        assert(0 == RegistReadEvent(fd));
-        assert(0 == RegistWriteEvent(fd));
+        RegistReadEvent(fd);
+        RegistWriteEvent(fd);
         return 0;
     }
 

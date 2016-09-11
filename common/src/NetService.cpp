@@ -40,6 +40,8 @@ NetService::StopListener()
         iter->second->StopListen();
         delete iter->second;
     }
+
+    return err;
 }
 
 int 
@@ -88,11 +90,11 @@ NetService::DropAllConnections()
 
     std::map<uint64_t, TcpConnection*>::iterator iter = mConns.begin();
     for (;iter != mConns.end(); ++iter) {
-        iter->second->UnRegistRWEvent(iter->second->mSocket->GetFd());
+        iter->second->Close();
         delete iter->second;
     }
 
-    return 0;
+    return err;
 }
 
 
@@ -103,6 +105,7 @@ NetService::Init()
 
     do {
         mDriver = new Driver("NetService driver");
+
         err = StartListener();
         if (err != 0) {
             break;
@@ -120,6 +123,7 @@ NetService::Init()
 int
 NetService::Finit()
 {
+
     StopListener();
 
     DropAllConnections();
@@ -128,11 +132,10 @@ NetService::Finit()
         mDriver->Stop();
     }
 
-
     return 0;
 }
 
-void 
+void
 NetService::AcceptConnection(OperContext *ctx)
 {
     uint64_t connID = mMaxID++;
@@ -161,14 +164,20 @@ NetService::RecvMsg(OperContext *ctx)
     delete msg;
     ctx->SetMessage(NULL);
 
-    OperContext *replyctx = new OperContext(OperContext::OP_SEND);
-    Msg *repmsg = new Msg();
-    (*repmsg) << "this is reply from netservice!";
-    repmsg->SetLen();
-    replyctx->SetMessage(repmsg);
-    replyctx->SetConnID(ctx->GetConnID());
-    Enqueue(replyctx);
-    OperContext::DecRef(replyctx);
+    if (mRunning) {
+        OperContext *replyctx = new OperContext(OperContext::OP_SEND);
+        Msg *repmsg = new Msg();
+        (*repmsg) << "this is reply from netservice!";
+        repmsg->SetLen();
+        replyctx->SetMessage(repmsg);
+        replyctx->SetConnID(ctx->GetConnID());
+        if (!Enqueue(replyctx)) {
+            delete repmsg;
+            replyctx->SetMessage(NULL);
+        }
+        OperContext::DecRef(replyctx);
+    }
+
 }
 
 void
@@ -259,6 +268,7 @@ NetService::AddListener(std::string ip, short port)
     return err;
 }
 
+#if 0
 void
 NetService::ProcessStart(OperContext *ctx)
 {
@@ -280,20 +290,16 @@ NetService::ProcessStop(OperContext *ctx)
     sync->Signal();
 
 }
+#endif
 
-int 
+bool
 NetService::Process(OperContext *ctx)
 {
+    bool processed = true;
     debug_log("NetService::Process! ctx type: " << ctx->GetType());
     /* TODO handle connection dropped*/
     switch (ctx->GetType())
     {
-        case OperContext::OP_STOP:
-            ProcessStop(ctx);
-            break;
-        case OperContext::OP_START:
-            ProcessStart(ctx);
-            break;
         case OperContext::OP_ACCEPT:
             AcceptConnection(ctx);
             break;
@@ -306,9 +312,12 @@ NetService::Process(OperContext *ctx)
         case OperContext::OP_DROP:
             DropConnection(ctx);
             break;
+        default:
+            processed = false;
+            break;
     }
 
-    return 0;
+    return processed;
 }
 
 
