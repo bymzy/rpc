@@ -45,7 +45,7 @@ LogicService::Run()
         /* io driver will not be blocked when received msg */
         pthread_mutex_unlock(&mMutex);
 
-        for (int i = 0;i < ctxVec.size();++i) {
+        for (size_t i = 0;i < ctxVec.size();++i) {
             ctx = ctxVec[i];
             if (mRunning) {
                 if (!LogicService::Process(ctx)) {

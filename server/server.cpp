@@ -9,7 +9,6 @@
 int main()
 {
     int err = 0;
-    int i = 0;
     NetService *netService = new NetService(NULL, "server netservice");
 
     do {
