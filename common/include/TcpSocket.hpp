@@ -9,6 +9,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
+#include <unistd.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -341,7 +342,7 @@ public:
     {
         int err = 0;
         int tempLen = 0;
-        char *buf = (char *)malloc(sizeof(char) * sizeof(int));
+        char buf[4] ;
 
         if (NoOK()) {
             return EINVAL;
@@ -349,6 +350,8 @@ public:
 
         do {
             if (mPreRecv) {
+                error_log("has pre received, should not do this again!");
+                assert(0);
                 return 0;
             }
             mPreRecv = true;
@@ -365,10 +368,6 @@ public:
 
             debug_log("prerecv len: " << len);
         } while(0);
-
-        if (buf != NULL) {
-            free(buf);
-        }
 
         return err;
     }
